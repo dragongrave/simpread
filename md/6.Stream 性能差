@@ -1,0 +1,330 @@
+> 本文由 [简悦 SimpRead](http://ksria.com/simpread/) 转码， 原文地址 [www.kancloud.cn](https://www.kancloud.cn/hanxt/javacrazy/1588494)
+
+> 当你用十几行代码，完成别人两三行就搞定的问题，你不觉得自己有问题么？ 当别人面对一个老问题，用一个新的方法解决了，你不想一探究竟么？ 当别人完成该工作用了一小时，你用了一天，你不想多休息休息么？ 期望能够让读者攫取到一些有价值的，能够提高工作效率的东西。让你的写代码，一看上去就透漏着一种高级的味道；让你的设计，一看上去就经过专业的学习与训练。
+
+下面是视频（优酷的清晰度有限）：还是建议大家去 B 站观看：[B 站观看地址](https://www.bilibili.com/video/BV1sE411P7C1/)。如果您觉得我做的工作对您有帮助，请去 B 站点赞、关注、转发、收藏，您的支持是我不竭的创作动力！
+
+一、粉丝的反馈
+-------
+
+![](https://img.kancloud.cn/88/15/8815b15ca9b6236b3f92dea23eac2cc2_1076x263.png)
+
+**问：stream 比 for 循环慢 5 倍，用这个是为了啥？**  
+答：互联网是一个新闻泛滥的时代，三人成虎，以假乱真的事情时候发生。作为一个技术开发者，要自己去动手去做，不要人云亦云。
+
+的确，这位粉丝说的这篇文章我也看过，我就不贴地址了，也没必要给他带流量。怎么说呢？就是一个不懂得测试的、不入流开发工程师做的性能测试，给出了一个危言耸听的结论。
+
+二、所有性能测试结论都是片面的
+---------------
+
+性能测试是必要的，但针对性能测试的结果，永远要持怀疑态度。为什么这么说？
+
+*   性能测试脱离业务场景就是片面的性能测试。你能覆盖所有的业务场景么？
+*   性能测试脱离硬件环境就是片面的性能测试。你能覆盖所有的硬件环境么？
+*   性能测试脱离开发人员的知识面就是片面的性能测试。你能覆盖各种开发人员奇奇怪怪的代码么？
+
+所以，我从来不相信网上的任何性能测试的文章。凡是我自己的从事的业务场景，我都要在接近生产环境的机器上自己测试一遍。 **所有性能测试结论都是片面的，只有你生产环境下的运行结果才是真的。**
+
+三、动手测试 Stream 的性能
+-----------------
+
+### 3.1. 环境
+
+windows10 、16G 内存、i7-7700HQ 2.8HZ 、64 位操作系统、JDK 1.8.0_171
+
+### 3.2. 测试用例与测试结论
+
+我们在上一节, 已经讲过：
+
+*   针对不同的数据结构，Stream 流的执行效率是不一样的
+*   针对不同的数据源，Stream 流的执行效率也是不一样的
+
+所以记住笔者的话：**所有性能测试结论都是片面的**，你要自己动手做，相信你自己的代码和你的环境下的测试！我的测试结果仅仅代表我自己的测试用例和测试数据结构！
+
+#### 3.2.1. 测试用例一
+
+测试用例：5 亿个 int 随机数，求最小值  
+测试结论（测试代码见后文）：
+
+*   使用普通 for 循环，执行效率是 Stream 串行流的 2 倍。也就是说普通 for 循环性能更好。
+*   Stream 并行流计算是普通 for 循环执行效率的 4-5 倍。
+*   Stream 并行流计算 > 普通 for 循环 > Stream 串行流计算
+
+![](https://img.kancloud.cn/dd/60/dd60020d6d0e0a6f0c21d40cac3fbc38_658x1710.png)
+
+### 3.2. 测试用例二
+
+测试用例：长度为 10 的 1000000 随机字符串，求最小值  
+测试结论（测试代码见后文）：
+
+*   普通 for 循环执行效率与 Stream 串行流不相上下
+*   Stream 并行流的执行效率远高于普通 for 循环
+*   Stream 并行流计算 > 普通 for 循环 = Stream 串行流计算
+
+![](https://img.kancloud.cn/9a/25/9a255a77b70ff19563f706b14d5afb5d_652x1728.png)
+
+### 3.3. 测试用例三
+
+测试用例：10 个用户，每人 200 个订单。按用户统计订单的总价。  
+测试结论（测试代码见后文）：
+
+*   Stream 并行流的执行效率远高于普通 for 循环
+*   Stream 串行流的执行效率大于等于普通 for 循环
+*   Stream 并行流计算 > Stream 串行流计算 >= 普通 for 循环  
+    ![](https://img.kancloud.cn/ea/d5/ead5d37c2fa78177ab100c20ce41c36f_655x1764.png)
+
+四、最终测试结论
+--------
+
+*   对于简单的数字 (list-Int) 遍历，普通 for 循环效率的确比 Stream 串行流执行效率高（1.5-2.5 倍）。但是 Stream 流可以利用并行执行的方式发挥 CPU 的多核优势, 因此并行流计算执行效率高于 for 循环。
+*   对于 list-Object 类型的数据遍历，普通 for 循环和 Stream 串行流比也没有任何优势可言，更不用提 Stream 并行流计算。
+
+虽然在不同的场景、不同的数据结构、不同的硬件环境下。Stream 流与 for 循环性能测试结果差异较大，甚至发生逆转。**但是总体上而言**：
+
+*   Stream 并行流计算 >> 普通 for 循环 ~= Stream 串行流计算 (之所以用两个大于号，你细品)
+*   数据容量越大，Stream 流的执行效率越高。
+*   Stream 并行流计算通常能够比较好的利用 CPU 的多核优势。CPU 核心越多，Stream 并行流计算效率越高。
+
+stream 比 for 循环慢 5 倍？也许吧，单核 CPU、串行 Stream 的 int 类型数据遍历？我没试过这种场景，但是我知道这不是应用系统的核心场景。看了十几篇测试博文，和我的测试结果。我的结论是： **在大多数的核心业务场景下及常用数据结构下，Stream 的执行效率比 for 循环更高。** 毕竟我们的业务中通常是实实在在的实体对象，没事谁总对`List<Int>`类型进行遍历？谁的生产服务器是单核？。
+
+五、测试代码
+------
+
+```
+<dependency>
+    <groupId>com.github.houbb</groupId>
+    <artifactId>junitperf</artifactId>
+    <version>2.0.0</version>
+</dependency>
+
+
+```
+
+复制
+
+测试用例一：
+
+```
+import com.github.houbb.junitperf.core.annotation.JunitPerfConfig;
+import com.github.houbb.junitperf.core.report.impl.HtmlReporter;
+import org.junit.jupiter.api.BeforeAll;
+
+import java.util.Arrays;
+import java.util.Random;
+
+public class StreamIntTest {
+
+    public static int[] arr;
+
+    @BeforeAll
+    public static void init() {
+        arr = new int[500000000];  //5亿个随机Int
+        randomInt(arr);
+    }
+
+    @JunitPerfConfig( warmUp = 1000, reporter = {HtmlReporter.class})
+    public void testIntFor() {
+        minIntFor(arr);
+    }
+
+    @JunitPerfConfig( warmUp = 1000, reporter = {HtmlReporter.class})
+    public void testIntParallelStream() {
+        minIntParallelStream(arr);
+    }
+
+    @JunitPerfConfig( warmUp = 1000, reporter = {HtmlReporter.class})
+    public void testIntStream() {
+        minIntStream(arr);
+    }
+
+    private int minIntStream(int[] arr) {
+        return Arrays.stream(arr).min().getAsInt();
+    }
+
+    private int minIntParallelStream(int[] arr) {
+        return Arrays.stream(arr).parallel().min().getAsInt();
+    }
+
+    private int minIntFor(int[] arr) {
+        int min = Integer.MAX_VALUE;
+        for (int anArr : arr) {
+            if (anArr < min) {
+                min = anArr;
+            }
+        }
+        return min;
+    }
+
+    private static void randomInt(int[] arr) {
+        Random r = new Random();
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = r.nextInt();
+        }
+    }
+}
+
+
+```
+
+复制
+
+测试用例二：
+
+```
+import com.github.houbb.junitperf.core.annotation.JunitPerfConfig;
+import com.github.houbb.junitperf.core.report.impl.HtmlReporter;
+import org.junit.jupiter.api.BeforeAll;
+
+import java.util.ArrayList;
+import java.util.Random;
+
+public class StreamStringTest {
+
+    public static ArrayList<String> list;
+
+    @BeforeAll
+    public static void init() {
+        list = randomStringList(1000000);
+    }
+
+    @JunitPerfConfig(duration = 10000, warmUp = 1000, reporter = {HtmlReporter.class})
+    public void testMinStringForLoop(){
+        String minStr = null;
+        boolean first = true;
+        for(String str : list){
+            if(first){
+                first = false;
+                minStr = str;
+            }
+            if(minStr.compareTo(str)>0){
+                minStr = str;
+            }
+        }
+    }
+
+    @JunitPerfConfig(duration = 10000, warmUp = 1000, reporter = {HtmlReporter.class})
+    public void textMinStringStream(){
+        list.stream().min(String::compareTo).get();
+    }
+
+    @JunitPerfConfig(duration = 10000, warmUp = 1000, reporter = {HtmlReporter.class})
+    public void testMinStringParallelStream(){
+        list.stream().parallel().min(String::compareTo).get();
+    }
+
+    private static ArrayList<String> randomStringList(int listLength){
+        ArrayList<String> list = new ArrayList<>(listLength);
+        Random rand = new Random();
+        int strLength = 10;
+        StringBuilder buf = new StringBuilder(strLength);
+        for(int i=0; i<listLength; i++){
+            buf.delete(0, buf.length());
+            for(int j=0; j<strLength; j++){
+                buf.append((char)('a'+ rand.nextInt(26)));
+            }
+            list.add(buf.toString());
+        }
+        return list;
+    }
+}
+
+
+```
+
+复制
+
+测试用例三：
+
+```
+import com.github.houbb.junitperf.core.annotation.JunitPerfConfig;
+import com.github.houbb.junitperf.core.report.impl.HtmlReporter;
+import org.junit.jupiter.api.BeforeAll;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class StreamObjectTest {
+
+    public static List<Order> orders;
+
+    @BeforeAll
+    public static void init() {
+        orders = Order.genOrders(10);
+    }
+
+    @JunitPerfConfig(duration = 10000, warmUp = 1000, reporter = {HtmlReporter.class})
+    public void testSumOrderForLoop(){
+        Map<String, Double> map = new HashMap<>();
+        for(Order od : orders){
+            String userName = od.getUserName();
+            Double v; 
+            if((v=map.get(userName)) != null){
+                map.put(userName, v+od.getPrice());
+            }else{
+                map.put(userName, od.getPrice());
+            }
+        }
+
+    }
+
+    @JunitPerfConfig(duration = 10000, warmUp = 1000, reporter = {HtmlReporter.class})
+    public void testSumOrderStream(){
+        orders.stream().collect(
+                Collectors.groupingBy(Order::getUserName, 
+                        Collectors.summingDouble(Order::getPrice)));
+    }
+
+    @JunitPerfConfig(duration = 10000, warmUp = 1000, reporter = {HtmlReporter.class})
+    public void testSumOrderParallelStream(){
+        orders.parallelStream().collect(
+                Collectors.groupingBy(Order::getUserName, 
+                        Collectors.summingDouble(Order::getPrice)));
+    }
+}
+
+
+class Order{
+    private String userName;
+    private double price;
+    private long timestamp;
+    public Order(String userName, double price, long timestamp) {
+        this.userName = userName;
+        this.price = price;
+        this.timestamp = timestamp;
+    }
+    public String getUserName() {
+        return userName;
+    }
+    public double getPrice() {
+        return price;
+    }
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public static List<Order> genOrders(int listLength){
+        ArrayList<Order> list = new ArrayList<>(listLength);
+        Random rand = new Random();
+        int users = listLength/200;// 200 orders per user
+        users = users==0 ? listLength : users;
+        ArrayList<String> userNames = new ArrayList<>(users);
+        for(int i=0; i<users; i++){
+            userNames.add(UUID.randomUUID().toString());
+        }
+        for(int i=0; i<listLength; i++){
+            double price = rand.nextInt(1000);
+            String userName = userNames.get(rand.nextInt(users));
+            list.add(new Order(userName, price, System.nanoTime()));
+        }
+        return list;
+    }
+    @Override
+    public String toString(){
+        return userName + "::" + price;
+    }
+}
+
+
+```
+
+复制
